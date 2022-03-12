@@ -42,7 +42,7 @@ timeout -k 2s 180s ../mrmaster ../pg*txt &
 # give the master time to create the sockets.
 sleep 1
 
-# start multiple workers.
+# start multiple workers. 后台进程
 timeout -k 2s 180s ../mrworker ../../mrapps/wc.so &
 timeout -k 2s 180s ../mrworker ../../mrapps/wc.so &
 timeout -k 2s 180s ../mrworker ../../mrapps/wc.so &
