@@ -6,13 +6,16 @@ package main
 // go run mrsequential.go wc.so pg*.txt
 //
 
-import "fmt"
-import "6.824/mr"
-import "plugin"
-import "os"
-import "log"
-import "io/ioutil"
-import "sort"
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"plugin"
+	"sort"
+
+	"6.824/mr"
+)
 
 // for sorting by key.
 type ByKey []mr.KeyValue
@@ -28,7 +31,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	mapf, reducef := loadPlugin(os.Args[1])
+	mapf, reducef := loadPlugin(os.Args[1]) // object function
 
 	//
 	// read each input file,
@@ -41,13 +44,13 @@ func main() {
 		if err != nil {
 			log.Fatalf("cannot open %v", filename)
 		}
-		content, err := ioutil.ReadAll(file)
+		content, err := ioutil.ReadAll(file) // io.Reader -> byte[]
 		if err != nil {
 			log.Fatalf("cannot read %v", filename)
 		}
 		file.Close()
 		kva := mapf(filename, string(content))
-		intermediate = append(intermediate, kva...)
+		intermediate = append(intermediate, kva...) // add to mr.KeyValue{} object list
 	}
 
 	//
@@ -70,14 +73,14 @@ func main() {
 		j := i + 1
 		for j < len(intermediate) && intermediate[j].Key == intermediate[i].Key {
 			j++
-		}
+		} // the same key
 		values := []string{}
 		for k := i; k < j; k++ {
 			values = append(values, intermediate[k].Value)
 		}
 		output := reducef(intermediate[i].Key, values)
 
-		// this is the correct format for each line of Reduce output.
+		// this is the correct format for each line of Reduce output. Key, count
 		fmt.Fprintf(ofile, "%v %v\n", intermediate[i].Key, output)
 
 		i = j
@@ -86,12 +89,10 @@ func main() {
 	ofile.Close()
 }
 
-//
 // load the application Map and Reduce functions
 // from a plugin file, e.g. ../mrapps/wc.so
-//
 func loadPlugin(filename string) (func(string, string) []mr.KeyValue, func(string, []string) string) {
-	p, err := plugin.Open(filename)
+	p, err := plugin.Open(filename) // load plugin as dict string: obj
 	if err != nil {
 		log.Fatalf("cannot load plugin %v", filename)
 	}
