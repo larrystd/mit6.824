@@ -46,6 +46,12 @@ const (
 	Finished
 )
 
+type TaskMeta struct {
+	State     TaskState
+	StartTime time.Time
+	Id        int // TaskId
+}
+
 type MapTask struct {
 	TaskMeta
 	Filename string
@@ -54,12 +60,6 @@ type MapTask struct {
 type ReduceTask struct {
 	TaskMeta
 	IntermediateFilenames []string
-}
-
-type TaskMeta struct {
-	State     TaskState
-	StartTime time.Time
-	Id        int
 }
 
 type TaskOperation int

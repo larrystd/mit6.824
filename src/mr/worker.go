@@ -40,6 +40,7 @@ func Worker(mapf MapF, reducef ReduceF) {
 		if task.Operation == ToWait {
 			continue
 		}
+		// Process task
 		if task.IsMap {
 			log.Printf("received map job %s", task.Map.Filename)
 			err := handleMap(task, mapf)
@@ -73,7 +74,7 @@ func handleMap(task Task, mapf MapF) error {
 
 	kva := mapf(filename, string(content))
 	var encoders []*json.Encoder
-	// create nReduce with file, encoders is file Reader list
+	// create nReduce file, encoders is file Reader list, one mapper file would write into NReduce file
 	for i := 0; i < task.NReduce; i++ {
 		f, err := os.Create(fmt.Sprintf("mr-%d-%d", task.Map.Id, i))
 		if err != nil {
@@ -85,20 +86,20 @@ func handleMap(task Task, mapf MapF) error {
 	for _, kv := range kva {
 		_ = encoders[ihash(kv.Key)%task.NReduce].Encode(&kv)
 	}
-	// notify Coordinator
+	// notify Coordinator finish this task
 	call("Coordinator.Finish", &FinishArgs{IsMap: true, Id: task.Map.Id}, &Placeholder{})
 	return nil
 }
 
 func handleReduce(task Task, reducef ReduceF) error {
 	var kva []KeyValue
-	// for each file
+	// for each file, read reduced files
 	for _, filename := range task.Reduce.IntermediateFilenames {
 		iFile, err := os.Open(filename)
 		if err != nil {
 			log.Fatalf("cannot open %v", filename)
 		}
-		// read file
+		// read file and add to kva
 		dec := json.NewDecoder(iFile)
 		for {
 			var kv KeyValue
@@ -114,7 +115,7 @@ func handleReduce(task Task, reducef ReduceF) error {
 	}
 	// sort with kva
 	sort.Sort(ByKey(kva))
-	oname := fmt.Sprintf("mr-out-%d", task.Reduce.Id)
+	oname := fmt.Sprintf("mr-out-%d", task.Reduce.Id) // one reduce one outputfile
 	temp, err := os.CreateTemp(".", oname)
 	if err != nil {
 		log.Fatalf("cannot create reduce result tempfile %s", oname)
